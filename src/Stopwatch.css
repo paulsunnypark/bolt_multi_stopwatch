@@ -1,0 +1,21 @@
+.Stopwatch {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.lane-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.time {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 5px;
+}
