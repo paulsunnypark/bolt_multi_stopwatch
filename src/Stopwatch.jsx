@@ -1,34 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import './Stopwatch.css';
 
-function Stopwatch({ lane, onClose }) { // onClose prop 추가
+const Stopwatch = forwardRef(({ lane, onClose }, ref) => {
   const [time, setTime] = useState(0);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef(null);
+  const [log, setLog] = useState([]);
+  const [showLog, setShowLog] = useState(false);
 
   useEffect(() => {
     return () => clearInterval(intervalRef.current);
   }, []);
 
-  const handleStart = () => {
+  const start = () => {
     if (!running) {
       intervalRef.current = setInterval(() => {
         setTime((prevTime) => prevTime + 10);
       }, 10);
       setRunning(true);
+      setLog(prevLog => [...prevLog, { type: 'start', timestamp: new Date() }]);
     }
   };
 
-  const handleStop = () => {
+  const stop = () => {
     clearInterval(intervalRef.current);
     setRunning(false);
+    setLog(prevLog => [...prevLog, { type: 'stop', timestamp: new Date(), timeAtStop: time }]);
   };
 
-  const handleReset = () => {
+  const reset = () => {
     clearInterval(intervalRef.current);
     setTime(0);
     setRunning(false);
+    setLog(prevLog => [...prevLog, { type: 'reset', timestamp: new Date() }]);
   };
+
+  useImperativeHandle(ref, () => ({
+    start,
+    stop,
+    reset
+  }), [running, time]);
 
   const formatTime = (milliseconds) => {
     const seconds = Math.floor(milliseconds / 100);
@@ -41,13 +52,26 @@ function Stopwatch({ lane, onClose }) { // onClose prop 추가
       <div className="lane-label">Lane {lane}</div>
       <div className="time">{formatTime(time)}</div>
       <div className="controls">
-        {!running && <button onClick={handleStart}>Start</button>}
-        {running && <button onClick={handleStop}>Stop</button>}
-        <button onClick={handleReset}>Reset</button>
-        <button onClick={onClose}>Close</button> {/* Close 버튼 추가 */}
+        {!running && <button onClick={start}>Start</button>}
+        {running && <button onClick={stop}>Stop</button>}
+        <button onClick={reset}>Reset</button>
+        <button onClick={onClose}>Close</button>
+        <button onClick={() => setShowLog(!showLog)}>{showLog ? 'Hide Log' : 'Show Log'}</button>
       </div>
+      {showLog && (
+        <div className="log-display">
+          <h3>Event Log</h3>
+          {log.map((entry, index) => (
+            <div key={index} className="log-entry">
+              {entry.type === 'stop'
+                ? `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} at ${formatTime(entry.timeAtStop)}s - ${new Date(entry.timestamp).toLocaleTimeString()}`
+                : `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} - ${new Date(entry.timestamp).toLocaleTimeString()}`}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+});
 
 export default Stopwatch;
