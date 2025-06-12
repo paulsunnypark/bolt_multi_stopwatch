@@ -7,6 +7,7 @@ const Stopwatch = forwardRef(({ lane, onClose }, ref) => {
   const intervalRef = useRef(null);
   const [log, setLog] = useState([]);
   const [showLog, setShowLog] = useState(false);
+  const [lapNumber, setLapNumber] = useState(1);
 
   useEffect(() => {
     return () => clearInterval(intervalRef.current);
@@ -14,11 +15,19 @@ const Stopwatch = forwardRef(({ lane, onClose }, ref) => {
 
   const start = () => {
     if (!running) {
+      if (time === 0) { // True start
+        setLapNumber(1);
+        setLog(prevLog => [...prevLog, { type: 'start', timestamp: new Date() }]);
+      }
+      // For resume, no new 'start' log, no lapNumber change.
+      // The 'resume' event could be logged here if needed:
+      // else {
+      //   setLog(prevLog => [...prevLog, { type: 'resume', timestamp: new Date() }]);
+      // }
       intervalRef.current = setInterval(() => {
         setTime((prevTime) => prevTime + 10);
       }, 10);
       setRunning(true);
-      setLog(prevLog => [...prevLog, { type: 'start', timestamp: new Date() }]);
     }
   };
 
@@ -32,14 +41,32 @@ const Stopwatch = forwardRef(({ lane, onClose }, ref) => {
     clearInterval(intervalRef.current);
     setTime(0);
     setRunning(false);
-    setLog(prevLog => [...prevLog, { type: 'reset', timestamp: new Date() }]);
+    setLapNumber(1); // Reset lap number on reset
+    setLog([]); // Clear the log for the lane
+  };
+
+  const lap = () => {
+    setLog(prevLog => [...prevLog, { type: 'lap', lapNumber: lapNumber, timestamp: new Date(), timeAtLap: time }]);
+    setLapNumber(prevLapNumber => prevLapNumber + 1);
+  };
+
+  const clearRecords = () => {
+    setLog([]);
+    setLapNumber(1);
+  };
+
+  const isRunningState = () => {
+    return running;
   };
 
   useImperativeHandle(ref, () => ({
     start,
     stop,
-    reset
-  }), [running, time]);
+    reset,
+    lap,
+    clearRecords,
+    isRunningState
+  }), [running, time, log, lapNumber]);
 
   const formatTime = (milliseconds) => {
     const seconds = Math.floor(milliseconds / 100);
@@ -54,20 +81,27 @@ const Stopwatch = forwardRef(({ lane, onClose }, ref) => {
       <div className="controls">
         {!running && <button onClick={start}>Start</button>}
         {running && <button onClick={stop}>Stop</button>}
-        <button onClick={reset}>Reset</button>
+        {running && <button onClick={lap}>Lap</button>}
         <button onClick={onClose}>Close</button>
-        <button onClick={() => setShowLog(!showLog)}>{showLog ? 'Hide Log' : 'Show Log'}</button>
+        <button onClick={() => setShowLog(!showLog)}>{showLog ? 'Hide Records' : 'Show Records'}</button>
       </div>
       {showLog && (
         <div className="log-display">
-          <h3>Event Log</h3>
-          {log.map((entry, index) => (
-            <div key={index} className="log-entry">
-              {entry.type === 'stop'
-                ? `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} at ${formatTime(entry.timeAtStop)}s - ${new Date(entry.timestamp).toLocaleTimeString()}`
-                : `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} - ${new Date(entry.timestamp).toLocaleTimeString()}`}
-            </div>
-          ))}
+          <h3>Event Records</h3>
+          {log.map((entry, index) => {
+            let content = '';
+            if (entry.type === 'start') {
+              content = `Started - ${new Date(entry.timestamp).toLocaleTimeString()}`;
+            } else if (entry.type === 'lap') {
+              content = `Lap ${entry.lapNumber}: ${formatTime(entry.timeAtLap)}s - (Timestamp: ${new Date(entry.timestamp).toLocaleTimeString()})`;
+            } else if (entry.type === 'stop') {
+              content = `Stopped at ${formatTime(entry.timeAtStop)}s - (Timestamp: ${new Date(entry.timestamp).toLocaleTimeString()})`;
+            } else {
+              // Fallback for any other unknown log types
+              content = `${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)} - ${new Date(entry.timestamp).toLocaleTimeString()}`;
+            }
+            return <div key={index} className="log-entry">{content}</div>;
+          })}
         </div>
       )}
     </div>
