@@ -19,50 +19,102 @@ function App() {
 
   const handleStopAll = () => {
     Object.values(stopwatchRefs.current).forEach(ref => {
-      if (ref && typeof ref.stop === 'function') {
-        ref.stop();
+      if (ref && typeof ref.isRunningState === 'function' && typeof ref.stop === 'function') {
+        if (ref.isRunningState()) {
+          ref.stop();
+        }
       } else {
-        console.error('Stopwatch ref does not have a stop method or is null.');
+        // Log error if ref is null or methods are missing
+        if (!ref) {
+          console.error("Encountered a null ref in stopwatchRefs for Stop All.");
+        } else {
+          const missingMethods = [];
+          if (typeof ref.isRunningState !== 'function') missingMethods.push('isRunningState');
+          if (typeof ref.stop !== 'function') missingMethods.push('stop');
+          console.error(`Stopwatch ref is missing required methods for Stop All: ${missingMethods.join(', ')}.`);
+        }
       }
     });
   };
 
   const handleResetAll = () => {
     Object.values(stopwatchRefs.current).forEach(ref => {
-      if (ref && typeof ref.reset === 'function') {
-        ref.reset();
+      if (ref && typeof ref.isRunningState === 'function' && typeof ref.reset === 'function') {
+        if (!ref.isRunningState()) { // Only reset if not running
+          ref.reset();
+        }
       } else {
-        console.error('Stopwatch ref does not have a reset method or is null.');
+        // Log error if ref is null or methods are missing
+        if (!ref) {
+          console.error("Encountered a null ref in stopwatchRefs for Reset All.");
+        } else {
+          const missingMethods = [];
+          if (typeof ref.isRunningState !== 'function') missingMethods.push('isRunningState');
+          if (typeof ref.reset !== 'function') missingMethods.push('reset');
+          console.error(`Stopwatch ref is missing required methods for Reset All: ${missingMethods.join(', ')}.`);
+        }
       }
     });
   };
 
-  const handleRestartAll = () => {
+  const handleStartAll = () => {
     Object.values(stopwatchRefs.current).forEach(ref => {
-      if (ref) {
-        if (typeof ref.reset === 'function') {
-          ref.reset();
-        } else {
-          console.error('Stopwatch ref does not have a reset method.');
-        }
-        if (typeof ref.start === 'function') {
+      if (ref && typeof ref.isRunningState === 'function' && typeof ref.start === 'function') {
+        if (!ref.isRunningState()) {
           ref.start();
-        } else {
-          console.error('Stopwatch ref does not have a start method.');
         }
       } else {
-        console.error('Stopwatch ref is null.');
+        // Log error if ref is null or methods are missing
+        if (!ref) {
+          console.error("Encountered a null ref in stopwatchRefs.");
+        } else {
+          const missingMethods = [];
+          if (typeof ref.isRunningState !== 'function') missingMethods.push('isRunningState');
+          if (typeof ref.start !== 'function') missingMethods.push('start');
+          console.error(`Stopwatch ref is missing required methods: ${missingMethods.join(', ')}.`);
+        }
       }
     });
   };
+
+  const handleLapAll = () => {
+    Object.values(stopwatchRefs.current).forEach(ref => {
+      if (ref && typeof ref.isRunningState === 'function' && typeof ref.lap === 'function') {
+        if (ref.isRunningState()) {
+          ref.lap();
+        }
+      } else {
+        // Log error if ref is null or methods are missing
+        if (!ref) {
+          console.error("Encountered a null ref in stopwatchRefs for Lap All.");
+        } else {
+          const missingMethods = [];
+          if (typeof ref.isRunningState !== 'function') missingMethods.push('isRunningState');
+          if (typeof ref.lap !== 'function') missingMethods.push('lap');
+          console.error(`Stopwatch ref is missing required methods for Lap All: ${missingMethods.join(', ')}.`);
+        }
+      }
+    });
+  };
+
+  // Placeholder for Remove All Records - to be implemented in next step
+  const handleRemoveAllRecords = () => {
+    console.log("Remove All Records clicked - to be implemented");
+    // This will iterate and call clearRecords() on all refs
+  };
+
+  // handleStopAll and handleResetAll are already defined and will be updated in later steps
+  // handleRestartAll is removed and its functionality covered by Start All / Reset All
 
   return (
     <div className="App">
       <h1>Multi-Lane Stopwatch</h1>
       <button onClick={addLane}>Add Lane</button>
+      <button onClick={handleStartAll}>Start All</button>
+      <button onClick={handleLapAll}>Lap All</button>
       <button onClick={handleStopAll}>Stop All</button>
       <button onClick={handleResetAll}>Reset All</button>
-      <button onClick={handleRestartAll}>Restart All</button>
+      <button onClick={handleRemoveAllRecords}>Remove Records</button>
       <div className="lanes">
         {lanes.map((lane) => (
           <div key={lane.id}>
