@@ -97,14 +97,23 @@ function App() {
     });
   };
 
-  // Placeholder for Remove All Records - to be implemented in next step
   const handleRemoveAllRecords = () => {
-    console.log("Remove All Records clicked - to be implemented");
-    // This will iterate and call clearRecords() on all refs
+    if (window.confirm("정말 모든 레인의 기록을 삭제하시겠습니까?")) {
+      Object.values(stopwatchRefs.current).forEach(ref => {
+        if (ref && typeof ref.clearRecords === 'function') {
+          ref.clearRecords();
+        } else {
+          if (!ref) {
+            console.error("Encountered a null ref in stopwatchRefs for Remove Records.");
+          } else {
+            const missingMethods = [];
+            if (typeof ref.clearRecords !== 'function') missingMethods.push('clearRecords');
+            console.error(`Stopwatch ref is missing required methods for Remove Records: ${missingMethods.join(', ')}.`);
+          }
+        }
+      });
+    }
   };
-
-  // handleStopAll and handleResetAll are already defined and will be updated in later steps
-  // handleRestartAll is removed and its functionality covered by Start All / Reset All
 
   return (
     <div className="App">
